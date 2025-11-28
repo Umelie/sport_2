@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:oculus_sport.ViewModels.Main"
+             xmlns:models="clr-namespace:oculus_sport.Models"
+             x:Class="oculus_sport.Views.Main.BookingPage"
+             Title="{Binding Facility.Name}"
+             BackgroundColor="{StaticResource PageBackgroundLight}">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+
+        <Border Grid.Row="0" Margin="20" Padding="15" StrokeShape="RoundRectangle 10" BackgroundColor="{StaticResource White}" StrokeThickness="0">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Selected Court" FontSize="12" TextColor="{StaticResource Gray500}"/>
+                <Label Text="{Binding Facility.Name}" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Black}"/>
+                <Label Text="{Binding Facility.Location}" TextColor="{StaticResource Gray500}"/>
+                <Label Text="{Binding Facility.Price}" TextColor="{StaticResource Primary}" FontAttributes="Bold"/>
+            </VerticalStackLayout>
+        </Border>
+
+        <ScrollView Grid.Row="1" Padding="20,0">
+            <VerticalStackLayout Spacing="20">
+
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Select Date" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource Black}"/>
+                    <Border Stroke="{StaticResource Primary}" StrokeThickness="1" BackgroundColor="White" Padding="10" StrokeShape="RoundRectangle 5">
+                        <DatePicker Date="{Binding SelectedDate}" MinimumDate="{Binding SelectedDate}" Format="D" TextColor="{StaticResource Black}"/>
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Available Slots" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource Black}"/>
+
+                    <CollectionView ItemsSource="{Binding TimeSlots}">
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical" Span="3" VerticalItemSpacing="10" HorizontalItemSpacing="10"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:TimeSlot">
+                                <Border StrokeShape="RoundRectangle 8"
+                                        StrokeThickness="1"
+                                        Stroke="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter={StaticResource Primary}}"
+                                        BackgroundColor="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter={StaticResource Primary}}"
+                                        Padding="5,15">
+                                    <Label Text="{Binding TimeRange}" 
+                                           HorizontalOptions="Center"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{Binding IsSelected, Converter={StaticResource SelectedTextColorConverter}}"/>
+
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BookingViewModel}}, Path=SelectSlotCommand}" CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="2" Padding="20" BackgroundColor="{StaticResource White}">
+            <Button Text="Confirm Booking" 
+                    Command="{Binding ConfirmBookingCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    CornerRadius="25"
+                    HeightRequest="50"
+                    FontAttributes="Bold"/>
+        </Grid>
+
+        <ActivityIndicator Grid.RowSpan="3" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" 
+                           HorizontalOptions="Center" VerticalOptions="Center" Color="{StaticResource Primary}"/>
+    </Grid>
+</ContentPage>

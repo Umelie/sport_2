@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:oculus_sport.ViewModels.Main"
+             xmlns:models="clr-namespace:oculus_sport.Models"
+             x:Class="oculus_sport.Views.Main.EventPage"
+             Title="Events"
+             BackgroundColor="{StaticResource PageBackgroundLight}">
+
+    <Grid RowDefinitions="Auto, *" Padding="20">
+
+        <Label Grid.Row="0" Text="Latest Updates" Style="{StaticResource SubHeadline}" HorizontalOptions="Start" Margin="0,0,0,15"/>
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Events}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:SportEvent">
+                    <Border StrokeShape="RoundRectangle 15" StrokeThickness="0" BackgroundColor="{StaticResource White}" Margin="0,0,0,15">
+                        <Grid RowDefinitions="150, Auto">
+
+                            <Image Grid.Row="0" Source="{Binding ImageUrl}" Aspect="AspectFill" BackgroundColor="LightGray"/>
+
+                            <Border Grid.Row="0" IsVisible="{Binding IsNew}" 
+                                    HorizontalOptions="End" VerticalOptions="Start" 
+                                    Margin="10" BackgroundColor="#FF4081" 
+                                    StrokeShape="RoundRectangle 5" StrokeThickness="0" Padding="8,4">
+                                <Label Text="NEW" TextColor="White" FontSize="10" FontAttributes="Bold"/>
+                            </Border>
+
+                            <VerticalStackLayout Grid.Row="1" Padding="15" Spacing="5">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <Label Grid.Column="0" Text="{Binding Title}" FontAttributes="Bold" FontSize="16" TextColor="{StaticResource Black}" LineBreakMode="TailTruncation"/>
+                                    <Label Grid.Column="1" Text="{Binding DateDisplay}" FontSize="12" TextColor="Gray"/>
+                                </Grid>
+
+                                <Label Text="{Binding Description}" FontSize="13" TextColor="{StaticResource Gray500}" MaxLines="2" LineBreakMode="TailTruncation"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

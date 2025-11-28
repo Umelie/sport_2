@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:oculus_sport.ViewModels.Main"
+             xmlns:models="clr-namespace:oculus_sport.Models"
+             x:Class="oculus_sport.Views.Main.SchedulePage"
+             Title="Availability">
+
+    <Grid RowDefinitions="Auto, Auto, *" Padding="20" BackgroundColor="{StaticResource PageBackgroundLight}">
+
+        <CollectionView Grid.Row="0" ItemsSource="{Binding Categories}" HeightRequest="60" Margin="0,0,0,15">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:SportCategory">
+                    <Border StrokeShape="RoundRectangle 20" 
+                            StrokeThickness="0"
+                            BackgroundColor="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter={StaticResource Primary}}"
+                            Padding="20,10"
+                            HeightRequest="45">
+                        <Label Text="{Binding Name}" 
+                               TextColor="{Binding IsSelected, Converter={StaticResource SelectedTextColorConverter}}"
+                               FontAttributes="Bold" 
+                               VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SchedulePageViewModel}}, Path=SelectCategoryCommand}" CommandParameter="{Binding .}"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Border Grid.Row="1" Stroke="{StaticResource Gray300}" StrokeThickness="1" BackgroundColor="White" Padding="10" StrokeShape="RoundRectangle 10" Margin="0,0,0,20">
+            <Grid ColumnDefinitions="Auto, *">
+                <Label Text="📅" VerticalOptions="Center" Margin="0,0,10,0"/>
+                <DatePicker Grid.Column="1" Date="{Binding SelectedDate}" Format="D" TextColor="{StaticResource Black}"/>
+            </Grid>
+        </Border>
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding AvailableFacilities}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Facility">
+                    <Border StrokeShape="RoundRectangle 10" StrokeThickness="0" BackgroundColor="White" Margin="0,0,0,15" Padding="15">
+                        <Grid RowDefinitions="Auto, Auto">
+                            <Grid Grid.Row="0" ColumnDefinitions="*, Auto">
+                                <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="{StaticResource Black}"/>
+                                <Label Text="{Binding Rating, StringFormat='★ {0}'}" TextColor="{StaticResource Primary}" FontAttributes="Bold" Grid.Column="1"/>
+                            </Grid>
+
+                            <VerticalStackLayout Grid.Row="1" Margin="0,10,0,0">
+                                <Label Text="Available Times:" FontSize="12" TextColor="Gray"/>
+                                <Label Text="{Binding Location}" TextColor="{StaticResource Primary}" FontSize="14" FontAttributes="Bold" Margin="0,5,0,0"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <ActivityIndicator Grid.RowSpan="3" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" VerticalOptions="Center" HorizontalOptions="Center"/>
+    </Grid>
+</ContentPage>

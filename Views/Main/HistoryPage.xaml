@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:oculus_sport.ViewModels.Main"
+             xmlns:models="clr-namespace:oculus_sport.Models"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="oculus_sport.Views.Main.HistoryPage"
+             Title="History">
+
+    <Grid RowDefinitions="Auto, *" BackgroundColor="{StaticResource PageBackgroundLight}" Padding="20">
+        <Label Grid.Row="0" Text="My Bookings" Style="{StaticResource SubHeadline}" HorizontalOptions="Start" Margin="0,0,0,15"/>
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding MyBookings}">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="10" IsVisible="{Binding HasNoBookings}">
+                    <Image Source="dotnet_bot.png" HeightRequest="100" Opacity="0.5"/>
+                    <Label Text="No Bookings Found" TextColor="Gray" FontSize="18" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Booking">
+                    <Border StrokeShape="RoundRectangle 10" StrokeThickness="0" BackgroundColor="{StaticResource White}" Margin="0,0,0,15" Padding="15">
+                        <Grid ColumnDefinitions="80, *, Auto">
+                            <Border Grid.Column="0" StrokeShape="RoundRectangle 10" HeightRequest="80" WidthRequest="80" Padding="0">
+                                <Image Source="{Binding FacilityImage}" Aspect="AspectFill"/>
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" VerticalOptions="Center" Spacing="5">
+                                <Label Text="{Binding FacilityName}" FontAttributes="Bold" FontSize="16" TextColor="{StaticResource Black}"/>
+                                <Label Text="{Binding TimeSlot}" TextColor="{StaticResource Primary}" FontAttributes="Bold"/>
+                                <Label Text="{Binding Date, StringFormat='{0:MMMM dd, yyyy}'}" TextColor="Gray" FontSize="12"/>
+                            </VerticalStackLayout>
+                            <Border Grid.Column="2" BackgroundColor="#E6F4EA" StrokeThickness="0" StrokeShape="RoundRectangle 5" VerticalOptions="Start" Padding="8,4">
+                                <Label Text="{Binding Status}" TextColor="#1E8E3E" FontSize="10" FontAttributes="Bold"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <ActivityIndicator Grid.RowSpan="2" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" VerticalOptions="Center" HorizontalOptions="Center"/>
+    </Grid>
+</ContentPage>

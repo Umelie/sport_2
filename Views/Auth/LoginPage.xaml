@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:oculus_sport.ViewModels.Auth"
+             x:Class="oculus_sport.Views.Auth.LoginPage"
+             Title="Login"
+             BackgroundColor="{StaticResource White}">
+
+    <Grid RowDefinitions="*,Auto,Auto">
+        <VerticalStackLayout Grid.Row="0" VerticalOptions="Center" Spacing="20" Padding="30">
+            <Label Text="UTS" 
+                   FontSize="40" 
+                   TextColor="{StaticResource Primary}" 
+                   HorizontalOptions="Center" 
+                   FontAttributes="Bold"/>
+
+            <Label Text="OCULUS SPORT" 
+                   FontSize="24" 
+                   TextColor="{StaticResource Black}" 
+                   HorizontalOptions="Center" 
+                   CharacterSpacing="4"/>
+
+            <Label Text="Welcome back" 
+                   FontSize="28" 
+                   TextColor="{StaticResource Black}" 
+                   FontAttributes="Bold"
+                   Margin="0,40,0,10"/>
+
+            <Border Stroke="{StaticResource Gray300}" StrokeThickness="1" StrokeShape="RoundRectangle 10">
+                <Entry Placeholder="Username or Email" 
+                       Text="{Binding Email}"
+                       TextColor="{StaticResource Black}"
+                       HeightRequest="50"
+                       Margin="10,0"/>
+            </Border>
+
+            <Border Stroke="{StaticResource Gray300}" StrokeThickness="1" StrokeShape="RoundRectangle 10">
+                <Entry Placeholder="Password" 
+                       IsPassword="True"
+                       Text="{Binding Password}"
+                       TextColor="{StaticResource Black}"
+                       HeightRequest="50"
+                       Margin="10,0"/>
+            </Border>
+
+            <Button Text="Log in" 
+                    Command="{Binding LoginCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="25"
+                    HeightRequest="50"
+                    FontAttributes="Bold"
+                    Margin="0,20,0,0"/>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                               IsVisible="{Binding IsBusy}"
+                               Color="{StaticResource Primary}"/>
+        </VerticalStackLayout>
+
+        <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Padding="0,0,0,40">
+            <Label Text="Don't have an account? " TextColor="{StaticResource Gray500}"/>
+            <Label Text="Sign up" 
+                   TextColor="{StaticResource Primary}" 
+                   FontAttributes="Bold"
+                   TextDecorations="Underline">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToSignUpCommand}"/>
+                </Label.GestureRecognizers>
+            </Label>
+        </HorizontalStackLayout>
+    </Grid>
+</ContentPage>

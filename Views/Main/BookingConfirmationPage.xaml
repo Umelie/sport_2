@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:oculus_sport.ViewModels.Main"
+             x:Class="oculus_sport.Views.Main.BookingConfirmationPage"
+             Title="Confirm Booking"
+             BackgroundColor="{StaticResource PageBackgroundLight}">
+
+    <Grid RowDefinitions="*, Auto">
+        <ScrollView Grid.Row="0" Padding="20">
+            <VerticalStackLayout Spacing="20">
+                <Border StrokeShape="RoundRectangle 15" BackgroundColor="White" Padding="20" StrokeThickness="0">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Confirm Your Booking" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+
+                        <BoxView HeightRequest="1" Color="{StaticResource Gray200}"/>
+
+                        <Label Text="{Binding Booking.FacilityName}" FontSize="18" FontAttributes="Bold" TextColor="Black"/>
+                        <Label Text="{Binding Booking.Date, StringFormat='{0:D}'}" TextColor="Gray"/>
+                        <Label Text="{Binding Booking.TimeSlot}" TextColor="Gray"/>
+
+                        <BoxView HeightRequest="1" Color="{StaticResource Gray200}"/>
+
+                        <Label Text="Booked By:" FontSize="12" TextColor="Gray"/>
+                        <Label Text="{Binding Booking.ContactName}" FontSize="16" TextColor="Black"/>
+                        <Label Text="{Binding Booking.ContactStudentId}" TextColor="{StaticResource Gray500}" FontSize="14"/>
+                        <Label Text="{Binding Booking.ContactPhone}" TextColor="{StaticResource Gray500}" FontSize="14"/>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Padding="20" ColumnSpacing="15" BackgroundColor="White">
+            <Button Grid.Column="0" Text="CANCEL" Command="{Binding CancelCommand}" BackgroundColor="White" TextColor="Red" BorderColor="Red" BorderWidth="1"/>
+            <Button Grid.Column="1" Text="CONFIRM" Command="{Binding ConfirmCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White"/>
+        </Grid>
+
+        <ActivityIndicator Grid.RowSpan="2" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" HorizontalOptions="Center" VerticalOptions="Center"/>
+    </Grid>
+</ContentPage>
