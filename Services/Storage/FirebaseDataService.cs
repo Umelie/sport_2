@@ -17,7 +17,6 @@ namespace oculus_sport.Services.Storage
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _projectId = "oculus-sport";
 
-
         //------------ sync login + profile
         private const string UsersCollection = "users";
         public FirebaseDataService(HttpClient httpClient)
@@ -74,9 +73,7 @@ namespace oculus_sport.Services.Storage
             };
         }
 
-
-
-        // ----------- save user sign up info into firestore using REST API
+        // ----------- 1. save user sign up info into firestore using REST API
         public async Task SaveUserToFirestoreAsync(User user, string idToken)
         {
             var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/users/{user.Id}";
@@ -107,31 +104,120 @@ namespace oculus_sport.Services.Storage
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Firestore save failed: {result}");
         }
-    }
 
-    // IDatabaseService implementation using Firestore
-    //public class FirebaseDataService : IDatabaseService
-    //{
-    //    // Backing field left null until first use
-    //    private IFirebaseFirestore? _firestoreClient;
+        // --------- get facility by document ID
+        private static string GetString(JsonElement fields, string name)
+        {
+            return fields.TryGetProperty(name, out var field) &&
+                   field.TryGetProperty("stringValue", out var value)
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
+        }
 
-    //    // Lazy accessor — resolves the plugin at first use (avoids DI-time exception).
-    //    private IFirebaseFirestore FirestoreClient
-    //    {
-    //        get
-    //        {
-    //            if (_firestoreClient != null)
-    //                return _firestoreClient;
+        private static double GetDouble(JsonElement fields, string name)
+        {
+            if (!fields.TryGetProperty(name, out var field)) return 0.0;
 
-    //            // Try to resolve the platform implementation.
-    //            _firestoreClient = CrossFirebaseFirestore.Current;
+            if (field.TryGetProperty("doubleValue", out var dbl))
+                return dbl.GetDouble();
 
-    //            if (_firestoreClient == null)
-    //                throw new InvalidOperationException("Firestore plugin not available on this platform.");
+            if (field.TryGetProperty("integerValue", out var intVal) &&
+                double.TryParse(intVal.GetString(), out var parsed))
+                return parsed;
 
-    //            return _firestoreClient;
-    //        }
-    //    }
+            return 0.0;
+        }
+
+        public async Task<Facility?> GetFacilityByIdAsync(string documentId)
+        {
+            //---single facility
+            var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/facility/{documentId}";
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[ERROR] Facility {documentId} fetch failed: {response.StatusCode}");
+                return null;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            if (!doc.RootElement.TryGetProperty("fields", out var fields)) return null;
+
+            return new Facility
+            {
+                Name = GetString(fields, "facilityName"),
+                Location = GetString(fields, "location"),
+                ImageUrl = GetString(fields, "imageUrl"),
+                Price = GetDouble(fields, "price"),
+                Rating = GetDouble(fields, "rating")
+            };
+        }
+
+
+        // --------- get all facilities
+        public async Task<List<Facility>> GetFacilitiesAsync()
+        {
+            var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/facility";
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[ERROR] Facility collection fetch failed: {response.StatusCode}");
+                return new List<Facility>();
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            var facilities = new List<Facility>();
+
+            if (!doc.RootElement.TryGetProperty("documents", out var documents)) return facilities;
+
+            foreach (var d in documents.EnumerateArray())
+            {
+                if (!d.TryGetProperty("fields", out var fields)) continue;
+
+                var facility = new Facility
+                {
+                    Name = GetString(fields, "facilityName"),
+                    Location = GetString(fields, "location"),
+                    ImageUrl = GetString(fields, "imageUrl"),
+                    Price = GetDouble(fields, "price"),
+                    Rating = GetDouble(fields, "rating")
+                };
+
+                facilities.Add(facility);
+                Console.WriteLine($"[DEBUG] Facility fetched: {facility.Name}");
+            }
+
+            return facilities;
+        }
+
+        // IDatabaseService implementation using Firestore
+        //public class FirebaseDataService : IDatabaseService
+        //{
+        //    // Backing field left null until first use
+        //    private IFirebaseFirestore? _firestoreClient;
+
+        //    // Lazy accessor — resolves the plugin at first use (avoids DI-time exception).
+        //    private IFirebaseFirestore FirestoreClient
+        //    {
+        //        get
+        //        {
+        //            if (_firestoreClient != null)
+        //                return _firestoreClient;
+
+        //            // Try to resolve the platform implementation.
+        //            _firestoreClient = CrossFirebaseFirestore.Current;
+
+        //            if (_firestoreClient == null)
+        //                throw new InvalidOperationException("Firestore plugin not available on this platform.");
+
+        //            return _firestoreClient;
+        //        }
+        //    }
 
         //public FirebaseDataService()
         //{
@@ -266,5 +352,6 @@ namespace oculus_sport.Services.Storage
 
         //    await UpdateItemAsync(user);
         //}
-    //}
+        //}
+    }
 }

@@ -8,6 +8,7 @@ public partial class SportCategory : ObservableObject
     public string Icon { get; set; } = string.Empty;
 
     // FIX: Use a private field. The Toolkit generates 'public bool IsSelected' for you.
+    //public bool IsSelected { get; set; }
     [ObservableProperty]
-    private bool _isSelected;
+    private bool isSelected;
 }
