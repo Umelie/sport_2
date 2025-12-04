@@ -16,5 +16,6 @@ namespace oculus_sport.Services.Auth
         // get current user - profile page
         User? GetCurrentUser();
         Task<string?> RefreshIdTokenAsync();
+
     }
 }

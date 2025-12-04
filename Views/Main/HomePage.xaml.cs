@@ -17,16 +17,6 @@ public partial class HomePage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-
-        // Load all facilities first
-        await _vm.LoadFacilitiesAsync();
-
-        // Then filter Badminton
-        var badminton = _vm.Categories.FirstOrDefault(c => c.Name == "Badminton");
-        if (badminton != null)
-        {
-            _vm.SelectCategoryCommand.Execute(badminton);
-        }
+        await _vm.LoadAsync();
     }
-
 }

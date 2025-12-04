@@ -53,7 +53,7 @@ public partial class BookingViewModel : BaseViewModel
         List<string> validSlots = new();
 
         // 1. Check Rules based on Facility Name (Your Allocation Logic)
-        if (Facility.Name.Contains("Badminton"))
+        if (Facility.FacilityName.Contains("Badminton"))
         {
             if (day == DayOfWeek.Monday || day == DayOfWeek.Thursday || day == DayOfWeek.Friday)
             {
@@ -65,7 +65,7 @@ public partial class BookingViewModel : BaseViewModel
                 AvailabilityMessage = "Badminton is only available on Mon, Thu, and Fri.";
             }
         }
-        else if (Facility.Name.Contains("Ping-Pong"))
+        else if (Facility.FacilityName.Contains("Ping-Pong"))
         {
             if (day == DayOfWeek.Monday || day == DayOfWeek.Friday)
             {
@@ -77,7 +77,7 @@ public partial class BookingViewModel : BaseViewModel
                 AvailabilityMessage = "Ping-Pong is only available on Mon and Fri.";
             }
         }
-        else if (Facility.Name.Contains("Basketball"))
+        else if (Facility.FacilityName.Contains("Basketball"))
         {
             if (day != DayOfWeek.Saturday && day != DayOfWeek.Sunday)
             {
@@ -124,7 +124,7 @@ public partial class BookingViewModel : BaseViewModel
         {
             // Use Auth Service to get ID if available, else placeholder
             UserId = _authService.GetCurrentUser()?.Id ?? "Tony",
-            FacilityName = Facility.Name,
+            FacilityName = Facility.FacilityName,
             FacilityImage = Facility.ImageUrl,
             Location = Facility.Location,
             Date = SelectedDate,

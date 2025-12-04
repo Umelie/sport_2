@@ -1,6 +1,7 @@
 ﻿using Microsoft.Maui.Storage;
 using oculus_sport.Models;
 using oculus_sport.Services.Storage;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -8,6 +9,14 @@ using System.Threading.Tasks;
 
 namespace oculus_sport.Services.Auth
 {
+    public class FirebaseRefreshResponse
+    {
+        public string IdToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public string ExpiresIn { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
+
     public class FirebaseAuthService : IAuthService
     {
         private readonly HttpClient _httpClient;
@@ -47,8 +56,8 @@ namespace oculus_sport.Services.Auth
             var response = await _httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
             var result = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine("Firebase raw response:");
-            Console.WriteLine(result);
+            //Console.WriteLine("Firebase raw response:");
+            //Console.WriteLine(result);
 
             var authResponse = JsonSerializer.Deserialize<FirebaseAuthResponse>(result, new JsonSerializerOptions { PropertyNameCaseInsensitive = true } );
 
@@ -64,11 +73,17 @@ namespace oculus_sport.Services.Auth
             _currentUser = new User
             {
                 Id = authResponse.LocalId,
-                Email = authResponse.Email
+                Email = authResponse.Email,
+                IdToken = authResponse.IdToken
             };
 
             await SecureStorage.SetAsync("idToken", authResponse.IdToken);
             await SecureStorage.SetAsync("refreshToken", authResponse.RefreshToken);
+
+            Preferences.Set("LastUserId", authResponse.LocalId);
+            // Debug: check expiry right after login
+            bool expired = IsTokenExpired(authResponse.IdToken);
+            Debug.WriteLine($"[Login] Token expires at: {expired}");
 
             Console.WriteLine($"Login successful for user: {authResponse.Email} (ID: {authResponse.LocalId})");
 
@@ -143,6 +158,32 @@ namespace oculus_sport.Services.Auth
 
 
         // ---------------- Refresh token
+        //public async Task<string?> RefreshIdTokenAsync()
+        //{
+        //    var refreshToken = await SecureStorage.GetAsync("refreshToken");
+        //    if (string.IsNullOrWhiteSpace(refreshToken)) return null;
+
+        //    var url = $"https://securetoken.googleapis.com/v1/token?key={ApiKey}";
+        //    var content = new FormUrlEncodedContent(new[]
+        //    {
+        //        new KeyValuePair<string, string>("grant_type", "refresh_token"),
+        //        new KeyValuePair<string, string>("refresh_token", refreshToken)
+        //    });
+
+        //    var response = await _httpClient.PostAsync(url, content);
+        //    var result = await response.Content.ReadAsStringAsync();
+
+        //    if (!response.IsSuccessStatusCode) return null;
+
+        //    var json = JsonSerializer.Deserialize<JsonElement>(result);
+        //    var newIdToken = json.GetProperty("id_token").GetString();
+
+        //    if (!string.IsNullOrWhiteSpace(newIdToken))
+        //        await SecureStorage.SetAsync("idToken", newIdToken);
+
+        //    return newIdToken;
+        //}
+
         public async Task<string?> RefreshIdTokenAsync()
         {
             var refreshToken = await SecureStorage.GetAsync("refreshToken");
@@ -151,22 +192,59 @@ namespace oculus_sport.Services.Auth
             var url = $"https://securetoken.googleapis.com/v1/token?key={ApiKey}";
             var content = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("grant_type", "refresh_token"),
-                new KeyValuePair<string, string>("refresh_token", refreshToken)
-            });
+            new KeyValuePair<string, string>("grant_type", "refresh_token"),
+            new KeyValuePair<string, string>("refresh_token", refreshToken)
+        });
 
             var response = await _httpClient.PostAsync(url, content);
             var result = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode) return null;
 
-            var json = JsonSerializer.Deserialize<JsonElement>(result);
-            var newIdToken = json.GetProperty("id_token").GetString();
+            var refreshResponse = JsonSerializer.Deserialize<FirebaseRefreshResponse>(result,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            if (!string.IsNullOrWhiteSpace(newIdToken))
-                await SecureStorage.SetAsync("idToken", newIdToken);
+            if (refreshResponse == null || string.IsNullOrWhiteSpace(refreshResponse.IdToken))
+                return null;
 
-            return newIdToken;
+            // Save updated tokens
+            await SecureStorage.SetAsync("idToken", refreshResponse.IdToken);
+            if (!string.IsNullOrWhiteSpace(refreshResponse.RefreshToken))
+                await SecureStorage.SetAsync("refreshToken", refreshResponse.RefreshToken);
+
+            return refreshResponse.IdToken;
+        }
+
+        private bool IsTokenExpired(string idToken)
+        {
+            var parts = idToken.Split('.');
+            if (parts.Length != 3)
+            {
+                Debug.WriteLine("[TokenCheck] Invalid JWT format.");
+                return true;
+            }
+
+            var payload = parts[1];
+            var jsonBytes = Convert.FromBase64String(
+                payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=')
+            );
+            var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
+
+            var expMatch = System.Text.RegularExpressions.Regex.Match(json, "\"exp\":(\\d+)");
+            if (!expMatch.Success)
+            {
+                Debug.WriteLine("[TokenCheck] No exp claim found.");
+                return true;
+            }
+
+            var expUnix = long.Parse(expMatch.Groups[1].Value);
+            var expDate = DateTimeOffset.FromUnixTimeSeconds(expUnix);
+
+            Debug.WriteLine($"[TokenCheck] Token expires at: {expDate:yyyy-MM-dd HH:mm:ss} UTC");
+            Debug.WriteLine($"[TokenCheck] Current time: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            Debug.WriteLine($"[TokenCheck] Token expired? {expDate < DateTimeOffset.UtcNow}");
+
+            return expDate < DateTimeOffset.UtcNow;
         }
 
         // ------------------Log out user, clear stored tokens
@@ -179,8 +257,11 @@ namespace oculus_sport.Services.Auth
             //await SecureStorage.SetAsync("refreshToken", string.Empty);
             SecureStorage.Remove("idToken");
             SecureStorage.Remove("refreshToken");
+            await Task.CompletedTask;
         }
 
         public User? GetCurrentUser() => _currentUser;
     }
+
+
 }

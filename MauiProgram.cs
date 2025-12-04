@@ -72,7 +72,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EventPageViewModel>();
         builder.Services.AddTransient<ProfilePageViewModel>();
         builder.Services.AddTransient<HistoryPageViewModel>();
-
+        
         // Booking Flow
         builder.Services.AddTransient<BookingViewModel>();
         builder.Services.AddTransient<BookingDetailsViewModel>();
@@ -91,6 +91,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EventPage>();
         builder.Services.AddTransient<ProfilePage>();
         builder.Services.AddTransient<HistoryPage>();
+        
 
         // Booking Flow Pages
         builder.Services.AddTransient<BookingPage>();

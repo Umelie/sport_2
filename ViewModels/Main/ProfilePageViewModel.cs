@@ -35,20 +35,15 @@ public partial class ProfilePageViewModel : BaseViewModel
     // --- load user info
     public async Task LoadAsync()
     {
-        await _authService.RefreshIdTokenAsync();
-
         var user = _authService.GetCurrentUser();
-        if (user == null)
+        if (user != null)
         {
-            // if no session > redirect to logn/signup
-            await Shell.Current.GoToAsync("//SignUpPage");
-            return;
+            Name = user.Name;
+            StudentId = user.StudentId;
+            Email = user.Email;
         }
-
-        Name = user.Name;
-        StudentId = user.StudentId;
-        Email = user.Email;
     }
+
 
     partial void OnIsDarkModeChanged(bool value)
     {
@@ -62,8 +57,9 @@ public partial class ProfilePageViewModel : BaseViewModel
         if (confirm)
         {
             await _authService.LogoutAsync();
-            // Navigate to Sign Up Page (Absolute Route to clear stack)
-            await Shell.Current.GoToAsync("//SignUpPage");
+            // Navigate to Login Page (Absolute Route to clear stack)
+            await Shell.Current.GoToAsync("//Auth/LoginPage");
+
         }
     }
 }

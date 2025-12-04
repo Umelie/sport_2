@@ -14,5 +14,6 @@ namespace oculus_sport.Models
         public string StudentId { get; set; } = string.Empty;
 
         public string IdToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; }
     }
 }

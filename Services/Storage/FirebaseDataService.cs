@@ -1,21 +1,24 @@
-using oculus_sport.Models;
+﻿using oculus_sport.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Threading.Tasks;
+using System.Net;
 
 namespace oculus_sport.Services.Storage
 {
     public class FirebaseDataService
     {
-        private readonly HttpClient _httpClient = new HttpClient();
+        private readonly HttpClient _httpClient;
         private readonly string _projectId = "oculus-sport";
+        private const string FacilitiesCollection = "facility";
+
 
         //------------ sync login + profile
         private const string UsersCollection = "users";
@@ -38,6 +41,8 @@ namespace oculus_sport.Services.Storage
             var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/{UsersCollection}/{uid}";
 
             var req = new HttpRequestMessage(HttpMethod.Get, url);
+            Debug.WriteLine($"[DEBUG] idToken: {idToken}");
+
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", idToken);
 
             var res = await _httpClient.SendAsync(req);
@@ -105,91 +110,77 @@ namespace oculus_sport.Services.Storage
                 throw new Exception($"Firestore save failed: {result}");
         }
 
-        // --------- get facility by document ID
-        private static string GetString(JsonElement fields, string name)
+        // --------- 2. get facility from firestore
+
+        public async Task ValidateFacilityCollectionAsync(string idToken)
         {
-            return fields.TryGetProperty(name, out var field) &&
-                   field.TryGetProperty("stringValue", out var value)
-                ? value.GetString() ?? string.Empty
-                : string.Empty;
-        }
+            Debug.WriteLine($"[DEBUG] idToken: {idToken}");
 
-        private static double GetDouble(JsonElement fields, string name)
-        {
-            if (!fields.TryGetProperty(name, out var field)) return 0.0;
+            var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/{FacilitiesCollection}";
 
-            if (field.TryGetProperty("doubleValue", out var dbl))
-                return dbl.GetDouble();
+            var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", idToken);
 
-            if (field.TryGetProperty("integerValue", out var intVal) &&
-                double.TryParse(intVal.GetString(), out var parsed))
-                return parsed;
+            var res = await _httpClient.SendAsync(req);
+            Debug.WriteLine($"[DEBUG] Firestore status: {res.StatusCode}");
 
-            return 0.0;
-        }
+            var json = await res.Content.ReadAsStringAsync();
+            Debug.WriteLine($"[DEBUG] Raw facility collection response: {json}");
 
-        public async Task<Facility?> GetFacilityByIdAsync(string documentId)
-        {
-            //---single facility
-            var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/facility/{documentId}";
-            var response = await _httpClient.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
+            if (!res.IsSuccessStatusCode)
             {
-                Console.WriteLine($"[ERROR] Facility {documentId} fetch failed: {response.StatusCode}");
-                return null;
+                Debug.WriteLine($"[ERROR] Facility collection fetch failed: {json}");
+                return;
             }
 
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
+            var doc = JsonSerializer.Deserialize<JsonElement>(json);
 
-            if (!doc.RootElement.TryGetProperty("fields", out var fields)) return null;
-
-            return new Facility
+            if (!doc.TryGetProperty("documents", out var documents))
             {
-                Name = GetString(fields, "facilityName"),
-                Location = GetString(fields, "location"),
-                ImageUrl = GetString(fields, "imageUrl"),
-                Price = GetDouble(fields, "price"),
-                Rating = GetDouble(fields, "rating")
-            };
-        }
-
-
-        // --------- get all facilities
-        public async Task<List<Facility>> GetFacilitiesAsync()
-        {
-            var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/facility";
-            var response = await _httpClient.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"[ERROR] Facility collection fetch failed: {response.StatusCode}");
-                return new List<Facility>();
+                Debug.WriteLine("[DEBUG] No documents property found in facility collection response.");
+                return;
             }
-
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-
-            var facilities = new List<Facility>();
-
-            if (!doc.RootElement.TryGetProperty("documents", out var documents)) return facilities;
 
             foreach (var d in documents.EnumerateArray())
             {
-                if (!d.TryGetProperty("fields", out var fields)) continue;
+                var name = d.GetProperty("name").GetString();
+                var docId = name?.Split('/').Last();
+                Debug.WriteLine($"[DEBUG] Found facility document ID: {docId}");
+            }
+        }
 
-                var facility = new Facility
+
+        public async Task<List<Facility>> GetFacilitiesAsync(string idToken)
+        {
+            var url = $"https://firestore.googleapis.com/v1/projects/{_projectId}/databases/(default)/documents/{FacilitiesCollection}";
+            var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", idToken);
+
+            var res = await _httpClient.SendAsync(req);
+            var json = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+                throw new Exception($"Facility fetch failed: {json}");
+
+            var doc = JsonSerializer.Deserialize<JsonElement>(json);
+            var facilities = new List<Facility>();
+
+            if (doc.TryGetProperty("documents", out var documents))
+            {
+                foreach (var d in documents.EnumerateArray())
                 {
-                    Name = GetString(fields, "facilityName"),
-                    Location = GetString(fields, "location"),
-                    ImageUrl = GetString(fields, "imageUrl"),
-                    Price = GetDouble(fields, "price"),
-                    Rating = GetDouble(fields, "rating")
-                };
+                    var fields = d.GetProperty("fields");
 
-                facilities.Add(facility);
-                Console.WriteLine($"[DEBUG] Facility fetched: {facility.Name}");
+                    facilities.Add(new Facility
+                    {
+                        FacilityName = GetStringField(fields, "facilityName"),
+                        Location = GetStringField(fields, "location"),
+                        Price = double.TryParse(GetStringField(fields, "price"), out var priceVal) ? priceVal : 0,
+                        Rating = double.TryParse(GetStringField(fields, "rating"), out var ratingVal) ? ratingVal : 0,
+                        ImageUrl = GetStringField(fields, "imageUrl"),
+                        Category = GetStringField(fields, "category")
+                    });
+                }
             }
 
             return facilities;
@@ -201,7 +192,7 @@ namespace oculus_sport.Services.Storage
         //    // Backing field left null until first use
         //    private IFirebaseFirestore? _firestoreClient;
 
-        //    // Lazy accessor � resolves the plugin at first use (avoids DI-time exception).
+        //    // Lazy accessor — resolves the plugin at first use (avoids DI-time exception).
         //    private IFirebaseFirestore FirestoreClient
         //    {
         //        get

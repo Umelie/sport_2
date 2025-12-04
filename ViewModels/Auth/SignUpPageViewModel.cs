@@ -73,12 +73,14 @@ namespace oculus_sport.ViewModels.Auth
                 // Call Auth Service with all required backend parameters
                 var newUser = await _authService.SignUpAsync(Email, Password, Name, StudentId);
 
+                // -- for stay logged in
                 if (newUser != null)
                 {
-                    // At this point, user is created in Firebase Auth only
-                    await Shell.Current.DisplayAlert("Success", "Account created successfully! Please log in.", "OK");
-                    await Shell.Current.GoToAsync("..");
+                    await SecureStorage.SetAsync("idToken", newUser.IdToken);
+                    await Shell.Current.GoToAsync("//HomePage");
                 }
+
+
             }
             catch (Exception ex)
             {
@@ -94,7 +96,8 @@ namespace oculus_sport.ViewModels.Auth
         async Task GoToLogin()
         {
             // Navigate back to Login Page
-            await Shell.Current.GoToAsync("..");
+            await Shell.Current.GoToAsync("//Auth/LoginPage");
+
         }
 
         //-------------comment first to test signup and login
