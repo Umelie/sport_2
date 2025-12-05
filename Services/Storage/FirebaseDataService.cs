@@ -175,16 +175,40 @@ namespace oculus_sport.Services.Storage
                     {
                         FacilityName = GetStringField(fields, "facilityName"),
                         Location = GetStringField(fields, "location"),
-                        Price = double.TryParse(GetStringField(fields, "price"), out var priceVal) ? priceVal : 0,
-                        Rating = double.TryParse(GetStringField(fields, "rating"), out var ratingVal) ? ratingVal : 0,
+                       
                         ImageUrl = GetStringField(fields, "imageUrl"),
-                        Category = GetStringField(fields, "category")
+                        Category = GetStringField(fields, "category"),
+                         
+                        Price = ParsePrice(fields, "price"),
+                        Rating = ParseInt(fields, "rating")
                     });
                 }
             }
 
             return facilities;
         }
+        private decimal ParsePrice(JsonElement fields, string fieldName)
+        {
+            if (fields.TryGetProperty(fieldName, out var field))
+            {
+                if (field.TryGetProperty("integerValue", out var intVal))
+                    return decimal.Parse(intVal.GetString());
+                if (field.TryGetProperty("doubleValue", out var dblVal))
+                    return decimal.Parse(dblVal.GetString(), System.Globalization.CultureInfo.InvariantCulture);
+            }
+            return 0;
+        }
+
+        private int ParseInt(JsonElement fields, string fieldName)
+        {
+            if (fields.TryGetProperty(fieldName, out var field) &&
+                field.TryGetProperty("integerValue", out var value))
+            {
+                return int.Parse(value.GetString());
+            }
+            return 0;
+        }
+
 
         // IDatabaseService implementation using Firestore
         //public class FirebaseDataService : IDatabaseService

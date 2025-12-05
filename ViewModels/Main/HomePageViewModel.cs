@@ -112,6 +112,7 @@ namespace oculus_sport.ViewModels.Main
         [RelayCommand]
         async Task BookFacility(Facility facility)
         {
+            Debug.WriteLine($"[DEBUG BOOKINGPAGE] Selected Facility: {facility.FacilityId}, {facility.FacilityName}, {facility.Location}, {facility.Price}");
             var navigationParameter = new Dictionary<string, object> { { "Facility", facility } };
             await Shell.Current.GoToAsync("BookingPage", navigationParameter);
         }
@@ -145,6 +146,7 @@ namespace oculus_sport.ViewModels.Main
             StatusMessage = $"Welcome back, {user.Name}";
             await _authService.RefreshIdTokenAsync();
         }
+
 
         private bool IsTokenExpired(string idToken)
         {

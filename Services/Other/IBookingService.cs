@@ -24,6 +24,7 @@ namespace oculus_sport.Services
         /// </summary>
         Task<bool> IsSlotAvailableAsync(string facilityId, string timeSlot, DateTime date);
 
+
         /// <summary>
         /// NEW: Calculates the final cost based on facility, time slot, and user details.
         /// </summary>

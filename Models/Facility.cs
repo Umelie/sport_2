@@ -8,7 +8,7 @@ namespace oculus_sport.Models
         public string FacilityName { get; set; }
         public string Location { get; set; }
         public string ImageUrl { get; set; }
-        public double Price { get; set; }
+        public decimal Price { get; set; }
         public double Rating { get; set; }
         public string Category { get; set; } = string.Empty;
 
